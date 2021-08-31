@@ -2,50 +2,59 @@
 const { validationResult } = require('express-validator')
 const pool = require('../libs/db-connection')
 
-const {hashPassword,checkPassword} = require('../libs/encryptor')
+const { hashPassword, checkPassword } = require('../libs/encryptor')
 const jwt = require('jsonwebtoken')
 
 
 const userController = {}
 userController.signUp = async (req, res) => {
-     //Valida los campos con express-validator
+    //Valida los campos con express-validator
 
-     const errors = validationResult(req)
-     if (!errors.isEmpty()) {
-         //si hay errores
- 
-         //Me quedo solo con los mensajes para mas seguridad
-         let arrayErrosms = errors.array()
-         let arrayMsg = []
- 
-         arrayErrosms.forEach(e => {
-             arrayMsg.push(e.msg)
-         });
-         //utilizo solo el mensaje y lo envio
-         res.status(400).json({ error: arrayMsg })
- 
-     } else {
-         const{username, email, password, passwordConfirm} = req.body
-         if(password !== passwordConfirm){
-             res.status(400).send('Password and passwordConfirm do not match')
-         }else{
-            let rows = await pool.query('select username from users where username = ? or email = ?', [username,email])
-             if(rows.length > 0){
-                res.status(400).send('username or email already in use')
-             }else{
-                 let encripted = hashPassword(password)
-                 const newUser = {
-                     username, email,password:encripted
-                 }
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        //si hay errores
 
-                 await pool.query('insert into users set  ?', [newUser])
-                 return res.send('created')
-             }
-             
-            
-         }
-      
-     }
+        //Me quedo solo con los mensajes para mas seguridad
+        let arrayErrosms = errors.array()
+        let arrayMsg = []
+
+        arrayErrosms.forEach(e => {
+            arrayMsg.push(e.msg)
+        });
+        //utilizo solo el mensaje y lo envio
+        res.status(400).json({ error: arrayMsg })
+
+    } else {
+        const { username, email, password } = req.body
+
+        let rows = await pool.query('select username from users where username = ? or email = ?', [username, email])
+        if (rows.length > 0) {
+            res.status(400).send('El nombre de usuario o correo ya esta en uso')
+        } else {
+            let encripted = hashPassword(password)
+            const newUser = {
+                username, email, password: encripted
+            }
+
+            await pool.query('insert into users set  ?', [newUser])
+            let userExist = await pool.query('Select id,username,email from users where username = ?', [username])
+            try {
+                //Envio un token creado para el usuario
+                //Libreria JWT, el token expira en 2h para mayor seguridad
+                jwt.sign({ userId: userExist[0].id, username: userExist[0].username, email: userExist[0].email }, 'secreto', { expiresIn: '2h' }, (err, token) => {
+                    res.json({ token, "id": userExist[0].id, "email": userExist[0].email, "username": userExist[0].username})
+                })
+
+
+            } catch (error) {
+                console.log(error)
+            }
+
+
+
+        }
+
+    }
 }
 
 userController.signIn = async (req, res) => {
@@ -74,7 +83,9 @@ userController.signIn = async (req, res) => {
                     //Envio un token creado para el usuario
                     //Libreria JWT, el token expira en 2h para mayor seguridad
                     jwt.sign({ userId: userExist[0].id, username: userExist[0].username, email: userExist[0].email }, 'secreto', { expiresIn: '2h' }, (err, token) => {
-                        res.json({ token, "id": userExist[0].id })
+                        res.json({ token, "id": userExist[0].id, "email": userExist[0].email, "username": userExist[0].username})
+                        console.log(userExist[0])
+                       
                     })
 
 
@@ -82,11 +93,11 @@ userController.signIn = async (req, res) => {
                     console.log(error)
                 }
             }else{
-                res.status(400).json({ error: 'password incorrect' })
+                res.status(400).send( 'Contraseña incorrecta' )
             }
 
         }else{
-            res.status(400).json({ error: 'username not found' })
+            res.status(400).send( 'Usuario no encontrado' )
         }
     }
 }
@@ -112,7 +123,7 @@ userController.changePassword = async (req, res) => {
 
     } else if (newPassword !== confirmNewPassword) {
         //Si los 2 campos no coinciden
-        res.status(400).json({ error: "password confirm not coincide" })
+        res.status(400).json({ error: "La contraseña no coincide" })
     } else {
         //Intenta hacer el llamado a la db buscando por id
         try {
@@ -121,7 +132,7 @@ userController.changePassword = async (req, res) => {
             //verifico la contraseña vieja con su cuenta
             let verify = await checkPassword(oldPassword, rows[0].username)
             if (!verify) {
-                res.status(400).json({ error: "old password incorrect" })
+                res.status(400).send( "old password incorrect" )
             } else {
                 //Funcion donde paso la contraseña nueva para cifrarla
                 let finalPassword = hashPassword(newPassword)
@@ -132,7 +143,7 @@ userController.changePassword = async (req, res) => {
             //Si el llamado no funciona mando un mensaje de error
         } catch (error) {
             console.log(error)
-            res.status(404).json({ message: 'Something goes wrong!' })
+            res.status(404).send( 'Something goes wrong!' )
         }
 
 

@@ -6,43 +6,41 @@ const { signUp, signIn,changePassword } = require('../controllers/userController
 //
 router.route('/sign-up')
     .post(
-        body('username', 'Username incomplete')
+        body('username', 'Username incompleto')
             .exists()
             .isLength({ min: 6, max: 20 }),
         body('email', 'Invalid Email')
             .exists()
             .isEmail(),
-        body('password', 'Password incomplete')
+        body('password', 'Password incompleto')
             .exists()
             .isLength({ min: 6 }),
-        body('passwordConfirm', 'PasswordConfirm incomplete')
-            .exists()
-            .isLength({ min: 6 }),
+       
         signUp
     )
 
 router.route('/sign-in')
     .post(
-        body('username', 'Username incomplete')
-            .exists()
-            .isLength({ min: 6, max: 20 }),
+        body('username', 'Username incompleto')
+            .exists(),
+            
 
-        body('password', 'Password incomplete')
-            .exists()
-            .isLength({ min: 6 }),
+        body('password', 'Password incompleto')
+            .exists(),
+            
 
         signIn
     )
 
 router.route('/change-password')
     .post(checkJwt,
-        body('oldPassword', 'old password value are required')
+        body('oldPassword', 'Contraseña vieja requerida')
+            .exists(),
+            
+        body('newPassword', 'Nueva contraseña requerida')
             .exists()
             .isLength({ min: 6 }),
-        body('newPassword', 'new password value are required')
-            .exists()
-            .isLength({ min: 6 }),
-        body('confirmNewPassword', 'confirm password incorrect')
+        body('confirmNewPassword', 'Las contraseñas no coinciden')
             .exists()
             .isLength({ min: 6 }),
 
