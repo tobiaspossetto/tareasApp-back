@@ -24,7 +24,8 @@ router.route('/:id')
         .exists()
         .isLength({  max: 50 }),
     body('description', 'Invalid Email')
-        .exists(),
+      
+        .isLength({  max: 200 }),
 
         editTask
     )

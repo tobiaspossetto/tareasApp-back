@@ -22,7 +22,7 @@ taskController.createTask = async (req, res) => {
              arrayMsg.push(e.msg)
          });
          //utilizo solo el mensaje y lo envio
-         res.status(400).json({ error: arrayMsg })
+         res.status(400).send({ error: arrayMsg })
  
      } else {
         const {title,description} = req.body
