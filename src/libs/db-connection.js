@@ -9,10 +9,10 @@ const {promisify} = require('util');
 
 
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: 'Salmo.83',
-    database: 'tareasapp'
+    host: 'bhmuorkmh92bflzgxo3d-mysql.services.clever-cloud.com',
+    user: 'urwqfkrzfshfauzv',
+    password: '5HJSuLBtQvki7FQl22wk',
+    database: 'bhmuorkmh92bflzgxo3d'
 })
 
 
